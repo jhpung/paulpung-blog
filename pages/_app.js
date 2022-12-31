@@ -19,7 +19,7 @@ const isSocket = process.env.SOCKET
 
 const pretendard = localFont({
   variable: '--font-pretendard',
-  src: '../publis/fonts/PretendardStdVariable.ttf',
+  src: '../public/fonts/PretendardStdVariable.ttf',
 })
 
 export default function App({ Component, pageProps }) {
