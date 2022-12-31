@@ -19,28 +19,7 @@ const isSocket = process.env.SOCKET
 
 const pretendard = localFont({
   variable: '--font-pretendard',
-  src: [
-    {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Light.woff2',
-      weight: '300',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Regular.woff2',
-      weight: '500',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Medium.woff2',
-      weight: '600',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Bold.woff2',
-      weight: '700',
-      style: 'normal',
-    },
-  ],
+  src: '../publis/fonts/PretendardStdVariable.ttf',
 })
 
 export default function App({ Component, pageProps }) {
