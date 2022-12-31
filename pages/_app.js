@@ -69,46 +69,18 @@ const pretendard = localFont({
   ],
 })
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = { hasError: false }
-  }
-
-  static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI.
-    return { hasError: true }
-  }
-
-  componentDidCatch(error, errorInfo) {
-    // You can also log the error to an error reporting service
-    console.log(error)
-  }
-
-  render() {
-    if (this.state.hasError) {
-      // You can render any custom fallback UI
-      return <h1>Something went wrong.</h1>
-    }
-
-    return this.props.children
-  }
-}
-
 export default function App({ Component, pageProps }) {
   return (
-    <ErrorBoundary>
-      <ThemeProvider attribute="class" defaultTheme={siteMetadata.theme}>
-        <Head>
-          <meta content="width=device-width, initial-scale=1" name="viewport" />
-        </Head>
-        {isDevelopment && isSocket && <ClientReload />}
-        <Analytics />
+    <ThemeProvider attribute="class" defaultTheme={siteMetadata.theme}>
+      <Head>
+        <meta content="width=device-width, initial-scale=1" name="viewport" />
+      </Head>
+      {isDevelopment && isSocket && <ClientReload />}
+      <Analytics />
 
-        <LayoutWrapper className={`${pretendard.variable} font-sans`}>
-          <Component {...pageProps} />
-        </LayoutWrapper>
-      </ThemeProvider>
-    </ErrorBoundary>
+      <LayoutWrapper className={`${pretendard.variable} font-sans`}>
+        <Component {...pageProps} />
+      </LayoutWrapper>
+    </ThemeProvider>
   )
 }
