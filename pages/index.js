@@ -87,7 +87,7 @@ export default function Home({ posts }) {
             className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
             aria-label="all posts"
           >
-            All Posts &rarr;
+            전체 포스트 &rarr;
           </Link>
         </div>
       )}

@@ -6,11 +6,7 @@ const CustomLink = ({ href, ...rest }) => {
   const isAnchorLink = href && href.startsWith('#')
 
   if (isInternalLink) {
-    return (
-      <Link legacyBehavior href={href}>
-        <a {...rest} />
-      </Link>
-    )
+    return <Link {...rest} href={href}></Link>
   }
 
   if (isAnchorLink) {
