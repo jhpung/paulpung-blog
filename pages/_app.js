@@ -22,11 +22,6 @@ const pretendard = localFont({
   variable: '--font-pretendard',
   src: [
     {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Thin.woff2',
-      weight: '200',
-      style: 'normal',
-    },
-    {
       path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Light.woff2',
       weight: '300',
       style: 'normal',
@@ -44,11 +39,6 @@ const pretendard = localFont({
     {
       path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Bold.woff2',
       weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Black.woff2',
-      weight: '900',
       style: 'normal',
     },
   ],
