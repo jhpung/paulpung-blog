@@ -18,11 +18,6 @@ import React from 'react'
 const isDevelopment = process.env.NODE_ENV === 'development'
 const isSocket = process.env.SOCKET
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
-
 const pretendard = localFont({
   variable: '--font-pretendard',
   src: [
@@ -32,13 +27,8 @@ const pretendard = localFont({
       style: 'normal',
     },
     {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-ExtraLight.woff2',
-      weight: '300',
-      style: 'normal',
-    },
-    {
       path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Light.woff2',
-      weight: '400',
+      weight: '300',
       style: 'normal',
     },
     {
@@ -54,11 +44,6 @@ const pretendard = localFont({
     {
       path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Bold.woff2',
       weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-ExtraBold.woff2',
-      weight: '800',
       style: 'normal',
     },
     {
