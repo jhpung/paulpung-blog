@@ -5,7 +5,6 @@ import 'katex/dist/katex.css'
 import '@fontsource/inter/variable-full.css'
 
 import localFont from '@next/font/local'
-import { Inter } from '@next/font/google'
 import { ThemeProvider } from 'next-themes'
 import Head from 'next/head'
 
