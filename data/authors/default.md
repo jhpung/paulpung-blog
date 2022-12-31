@@ -1,7 +1,14 @@
 ---
 name: 풍중현
 avatar: /static/images/avatar.jpg
-company: Awake corporation
+company: (주)어웨이크코퍼레이션
+job: Backend Engineer
+skills:
+  - Node.js
+  - TypeScript
+  - MySQL
+  - NestJS
+  - MongoDB
 email: jhpung.dev@gmail.com
 github: https://github.com/jhpung
 ---
