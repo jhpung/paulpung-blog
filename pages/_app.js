@@ -17,11 +17,6 @@ import React from 'react'
 const isDevelopment = process.env.NODE_ENV === 'development'
 const isSocket = process.env.SOCKET
 
-const pretendard = localFont({
-  variable: '--font-pretendard',
-  src: '../public/fonts/PretendardStdVariable.ttf',
-})
-
 export default function App({ Component, pageProps }) {
   return (
     <ThemeProvider attribute="class" defaultTheme={siteMetadata.theme}>
@@ -31,7 +26,7 @@ export default function App({ Component, pageProps }) {
       {isDevelopment && isSocket && <ClientReload />}
       <Analytics />
 
-      <LayoutWrapper className={`${pretendard.variable} font-sans`}>
+      <LayoutWrapper>
         <Component {...pageProps} />
       </LayoutWrapper>
     </ThemeProvider>

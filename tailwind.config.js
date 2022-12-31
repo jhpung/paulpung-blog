@@ -25,7 +25,7 @@ module.exports = {
         14: '3.5rem',
       },
       fontFamily: {
-        sans: ['var(--font-pretendard)', ...defaultTheme.fontFamily.sans],
+        sans: ['Pretendard Variable', ...defaultTheme.fontFamily.sans],
       },
       colors: {
         primary: colors.blue,
