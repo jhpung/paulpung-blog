@@ -2,15 +2,15 @@ const siteMetadata = {
   title: 'paulpung.dev',
   author: '풍중현',
   headerTitle: 'paulpung.dev',
-  description: 'A blog created with Next.js and Tailwind.css',
+  description: '개발 관련 글들을 올리고 있습니다.',
   language: 'ko-KR',
   theme: 'system', // system, dark or light
   siteUrl: 'https://tailwind-nextjs-starter-blog.vercel.app',
-  siteRepo: 'https://github.com/timlrx/tailwind-nextjs-starter-blog',
+  siteRepo: 'https://github.com/jhpung/paulpung-blog',
   siteLogo: '/static/images/logo.png',
   image: '/static/images/avatar.png',
   socialBanner: '/static/images/twitter-card.png',
-  email: 'address@yoursite.com',
+  email: 'jhpung.dev@gmail.com',
   github: 'https://github.com/jhpung',
   // twitter: 'https://twitter.com/Twitter',
   // facebook: 'https://facebook.com',
@@ -30,7 +30,7 @@ const siteMetadata = {
   newsletter: {
     // supports mailchimp, buttondown, convertkit, klaviyo, revue, emailoctopus
     // Please add your .env file and modify it according to your selection
-    provider: 'mailchimp',
+    provider: '',
   },
   comment: {
     // If you want to use a commenting system other than giscus you have to add it to the
@@ -51,7 +51,7 @@ const siteMetadata = {
       metadata: '0',
       // theme example: light, dark, dark_dimmed, dark_high_contrast
       // transparent_dark, preferred_color_scheme, custom
-      theme: 'light',
+      theme: 'preferred_color_scheme',
       // Place the comment box above the comments. options: bottom, top
       inputPosition: 'bottom',
       // Choose the language giscus will be displayed in. options: en, es, zh-CN, zh-TW, ko, ja etc

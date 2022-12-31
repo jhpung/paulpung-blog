@@ -4,6 +4,8 @@ import 'katex/dist/katex.css'
 
 import '@fontsource/inter/variable-full.css'
 
+import localFont from '@next/font/local'
+import { Inter } from '@next/font/google'
 import { ThemeProvider } from 'next-themes'
 import Head from 'next/head'
 
@@ -15,6 +17,57 @@ import { ClientReload } from '@/components/ClientReload'
 const isDevelopment = process.env.NODE_ENV === 'development'
 const isSocket = process.env.SOCKET
 
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
+
+const pretendard = localFont({
+  variable: '--font-pretendard',
+  src: [
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Thin.woff2',
+      weight: '200',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-ExtraLight.woff2',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Light.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Regular.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Medium.woff2',
+      weight: '600',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Bold.woff2',
+      weight: '700',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-ExtraBold.woff2',
+      weight: '800',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/web-font/pretendard/woff2/Pretendard-Black.woff2',
+      weight: '900',
+      style: 'normal',
+    },
+  ],
+})
+
 export default function App({ Component, pageProps }) {
   return (
     <ThemeProvider attribute="class" defaultTheme={siteMetadata.theme}>
@@ -23,7 +76,7 @@ export default function App({ Component, pageProps }) {
       </Head>
       {isDevelopment && isSocket && <ClientReload />}
       <Analytics />
-      <LayoutWrapper>
+      <LayoutWrapper className={`${pretendard.variable} font-sans`}>
         <Component {...pageProps} />
       </LayoutWrapper>
     </ThemeProvider>

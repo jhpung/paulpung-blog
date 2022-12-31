@@ -22,14 +22,14 @@ export default function Home({ posts }) {
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
         <div className="space-y-2 pt-6 pb-8 md:space-y-5">
           <h1 className="text-3xl font-extrabold leading-9 tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl sm:leading-10 md:text-6xl md:leading-14">
-            Latest
+            최근 포스트
           </h1>
           <p className="text-lg leading-7 text-gray-500 dark:text-gray-400">
             {siteMetadata.description}
           </p>
         </div>
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-          {!posts.length && 'No posts found.'}
+          {!posts.length && <p className="py-4">포스트가 존재하지 않습니다.</p>}
           {posts.slice(0, MAX_DISPLAY).map((frontMatter) => {
             const { slug, date, title, summary, tags } = frontMatter
             return (
@@ -69,7 +69,7 @@ export default function Home({ posts }) {
                           className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
                           aria-label={`Read "${title}"`}
                         >
-                          Read more &rarr;
+                          더 보기 &rarr;
                         </Link>
                       </div>
                     </div>

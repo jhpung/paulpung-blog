@@ -25,10 +25,10 @@ export default function ListLayout({ posts, title, initialDisplayPosts = [], pag
           </h1>
           <div className="relative max-w-lg">
             <input
-              aria-label="Search articles"
+              aria-label="포스트 검색"
               type="text"
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search articles"
+              placeholder="포스트 검색"
               className="block w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-900 dark:bg-gray-800 dark:text-gray-100"
             />
             <svg
@@ -48,7 +48,7 @@ export default function ListLayout({ posts, title, initialDisplayPosts = [], pag
           </div>
         </div>
         <ul>
-          {!filteredBlogPosts.length && 'No posts found.'}
+          {!filteredBlogPosts.length && <p className="py-4">포스트가 존재하지 않습니다.</p>}
           {displayPosts.map((frontMatter) => {
             const { slug, date, title, summary, tags } = frontMatter
             return (
