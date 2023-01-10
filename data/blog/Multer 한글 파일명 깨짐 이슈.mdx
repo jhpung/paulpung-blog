@@ -1,0 +1,83 @@
+---
+title: Multer 한글 파일명 깨짐
+date: '2023-01-11'
+tags: ['Multer', 'S3', 'Express', 'Node.js']
+draft: false
+summary: 'Mutler 한글 파일명이 깨지는 이슈'
+---
+
+## 이슈
+
+`multer` 기반의 S3 파일 업로드 패키지인 `multer-s3`를 사용해 한글 파일을 업로드 파일명이 꺠지는 이슈가 발생했다.
+
+![이미지](/static/images/multer-files.png)
+
+### 발생상황
+
+리액트로 만든 웹 앱에서 axios로 `multipart/form-data` 타입의 파일 업로드 요청을 보낼 경우, 파일명이 깨지는 오류 발생
+
+### 시도
+
+1. axios의 Content-Type 헤더 값을 multipart/form-data; charset=utf8 으로 설정해주었다. 그러나 뒤에 원인을 보면 나오지만 쓸모 없는 짓으로 판명
+2. form의 _charset_ 필드를 `utf8`으로 설정
+
+### 왜 발생했나?
+
+1. multer가 의존하고 있는 busboy 파일 업로드 패키지가 파일의 기본 charset을 `latin1`으로 설정해놨다.
+2. multer는 charset을 설정할 수 없다.
+3. axios는 `multipart/form-data` 요청일 경우 Content-Type을 커스텀할 수 없다. 즉, charset 지정이 안된다.
+
+## 해결방안
+
+다음 글을 참고하여 서버에서 직접 charset을 지정해주는 방안으로 해결했다.
+
+> [참조](https://github.com/expressjs/multer/issues/1104)
+
+결국은 latin1을 기본 charset으로 쓰므로 서버에서 latin1로 된 문자열을 utf8으로 변환시켜주면 된다.  
+다만 염려되는 것은 클라이언트 쪽에서 charset을 지정해서 보내주면 그에 맞게 서버에서 처리하는게 더 여러 상황에 대응하기 편할거라 생각이 든다는 것이다.
+
+### 코드
+
+- `diskStorage`를 쓰는 경우
+
+  ```javascript
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads') // 파일이 저장되는 경로입니다.
+    },
+    filename: function (req, file, cb) {
+      file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
+      cb(null, file.originalname) // 저장되는 파일명
+    },
+  })
+  ```
+
+- `multer-s3`를 쓰는 경우
+
+  ```javascript
+  const storage = multerS3({
+    // ...
+    key: function (req, file, cb) {
+      const now = dayjs()
+      file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
+
+      cb(
+        null,
+        /**
+         * !폴더별로 최대 파일 갯수가 있음
+         * => 날짜별로 폴더 분리
+         *  */
+        file.originalname
+      )
+    },
+    // ...
+  })
+  ```
+
+## 결론
+
+가급적 multer 쓰지 말자. 1년 동안 문서외에 업데이트도 없고, 이슈 해결도 쌓여가는 걸 보니 제대로 관리가 안되고 있는 것 같다.
+
+### 의문
+
+포스트맨이 브라우저랑 동작이 다르다. 헤더에 charset을 지정하진 않았는데 서버 쪽으로 오는 파일명이 `latin1`이 아니라 `utf8`으로 온다. 헤더 값으론 웹앱에서 axios로 보내는 요청의 헤더하고 유의미한 차이는 없어보이는데 추가로 조사를 해봐야겠다.
