@@ -20,11 +20,13 @@ summary: 'Mutler 한글 파일명이 깨지는 이슈'
 
 1. axios의 Content-Type 헤더 값을 multipart/form-data; charset=utf8 으로 설정해주었다. 그러나 뒤에 원인을 보면 나오지만 쓸모 없는 짓으로 판명
 2. form의 _charset_ 필드를 `utf8`으로 설정
+   아무런 영향이 없다.
 
 ### 왜 발생했나?
 
-1. multer가 의존하고 있는 busboy 파일 업로드 패키지가 파일의 기본 charset을 `latin1`으로 설정해놨다.
-2. multer는 charset을 설정할 수 없다.
+1. multer가 의존하고 있는 busboy 패키지가 파일의 기본 charset을 `latin1`으로 설정해놨다.
+   > busboy는 formdata를 처리해주는 패키지다.
+2. multer는 busboy의 charset을 설정할 수 있는 인터페이스를 제공하지 않는다. 즉 multer를 사용하는 앱은 charset 설정을 못한다.
 3. axios는 `multipart/form-data` 요청일 경우 Content-Type을 커스텀할 수 없다. 즉, charset 지정이 안된다.
 
 ## 해결방안
