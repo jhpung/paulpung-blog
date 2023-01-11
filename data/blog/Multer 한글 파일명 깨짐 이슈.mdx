@@ -83,3 +83,64 @@ summary: 'Mutler 한글 파일명이 깨지는 이슈'
 ### 의문
 
 포스트맨이 브라우저랑 동작이 다르다. 헤더에 charset을 지정하진 않았는데 서버 쪽으로 오는 파일명이 `latin1`이 아니라 `utf8`으로 온다. 헤더 값으론 웹앱에서 axios로 보내는 요청의 헤더하고 유의미한 차이는 없어보이는데 추가로 조사를 해봐야겠다.
+
+## 2023-01-12 추가
+
+Postman은 multipart/form-data로 보낼 떄 각 파트에 Content-Disposition 헤더에 UTF-8으로 명시해두어서 UTF-8으로 넘어오는데, axios는 설정이 안되어 있었다.
+
+| ![이미지](/static/images/multer-files.png) |
+| :----------------------------------------: |
+|            포스트맨 요청 메시지            |
+
+| ![이미지](/static/images/multer-files.png) |
+| :----------------------------------------: |
+|             axios 요청 메시지              |
+
+이를 해결하기 위해선 axios로는 안되고 XMLHttpRequest API를 사용하면 가능한 것 같은데 이는 너무 저수준 API라 프론트엔드 엔지니어 분이 고통받는 방향이 될거라 생각했다. 그래서 대신에 mutler를 fork해서 미들웨어를 만들 때 charset를 인자로 주입게끔 했다.
+
+multer의 /lib/make-middleware.js 파일 일부분이다.
+
+밑의 코드를
+
+```javascript
+try {
+  busboy = Busboy({
+    headers: req.headers,
+    limits: limits,
+    preservePath: preservePath,
+  })
+} catch (err) {
+  return next(err)
+}
+```
+
+다음과 같이 바꿨다.
+
+```javascript
+try {
+  busboy = Busboy({
+    headers: req.headers,
+    limits: limits,
+    preservePath: preservePath,
+    defParamCharset: charset, // 추가된 부분 - busboy는 defParamCharset이 없으면 바이너리 데이터를 latin1으로 인식함
+  })
+} catch (err) {
+  return next(err)
+}
+```
+
+[깃헙 레포지토리](https://github.com/jhpung/multer-utf8)
+
+해당 작업사항은 위 레포지토리에 있다.
+
+npm에도 올려놨다.
+
+[npm 링크](https://www.npmjs.com/package/multer-utf8)
+
+multer 코드가 복잡하지 않아서 참고 삼아 파일 업로드 미들웨어 라이브러리를 만들어볼까 생각이 든다. 아 그리고 이전 버전에서 해결책으로 제시한
+
+```javascript
+file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
+```
+
+위와 같은 임시 코드는 이제 필요없다.
