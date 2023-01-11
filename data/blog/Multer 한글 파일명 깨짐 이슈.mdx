@@ -88,13 +88,13 @@ summary: 'Mutler 한글 파일명이 깨지는 이슈'
 
 Postman은 multipart/form-data로 보낼 떄 각 파트에 Content-Disposition 헤더에 UTF-8으로 명시해두어서 UTF-8으로 넘어오는데, axios는 설정이 안되어 있었다.
 
-| ![이미지](/static/images/multer-files.png) |
-| :----------------------------------------: |
-|            포스트맨 요청 메시지            |
+| ![이미지](/static/images/multer-files-2.png) |
+| :------------------------------------------: |
+|             포스트맨 요청 메시지             |
 
-| ![이미지](/static/images/multer-files.png) |
-| :----------------------------------------: |
-|             axios 요청 메시지              |
+| ![이미지](/static/images/multer-files-3.png) |
+| :------------------------------------------: |
+|              axios 요청 메시지               |
 
 이를 해결하기 위해선 axios로는 안되고 XMLHttpRequest API를 사용하면 가능한 것 같은데 이는 너무 저수준 API라 프론트엔드 엔지니어 분이 고통받는 방향이 될거라 생각했다. 그래서 대신에 mutler를 fork해서 미들웨어를 만들 때 charset를 인자로 주입게끔 했다.
 
