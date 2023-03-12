@@ -58,11 +58,15 @@ const Giscus = () => {
   useEffect(() => {
     const iframe = document.querySelector('iframe.giscus-frame')
     if (!iframe) return
+
     LoadComments()
   }, [LoadComments])
 
+  useEffect(() => {
+    LoadComments()
+  }, [])
   return (
-    <div className="pt-6 pb-6 text-center text-gray-700 dark:text-gray-300">
+    <div className="w-full pt-6 pb-6 text-center text-gray-700 dark:text-gray-300">
       {enableLoadComments && <button onClick={LoadComments}>댓글 보기</button>}
       <div className="giscus" id={COMMENTS_ID} />
     </div>

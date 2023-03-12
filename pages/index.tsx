@@ -15,7 +15,11 @@ export async function getStaticProps() {
   return { props: { posts } }
 }
 
-export default function Home({ posts }) {
+interface HomeProps {
+  posts: any[]
+}
+
+export default function Home({ posts }: HomeProps) {
   return (
     <>
       <PageSEO title={siteMetadata.title} description={siteMetadata.description} />
@@ -54,7 +58,7 @@ export default function Home({ posts }) {
                             </Link>
                           </h2>
                           <div className="flex flex-wrap">
-                            {tags.map((tag) => (
+                            {tags?.map((tag) => (
                               <Tag key={tag} text={tag} />
                             ))}
                           </div>
