@@ -1,0 +1,78 @@
+---
+title: gRPC
+date: '2023-04-10'
+tags: ['gRPC']
+draft: true
+summary: '요즘 유행하는 gRPC에 대해 알아보자.'
+---
+
+## gRPC
+
+- RPC은 Remote Process Call의 약자로 해당 기술이 어떤 기술인지 한 단어로 알려준다.
+- "매개변수, 반환 타입과 함께 원격으로 함수를 호출 할 수 있다면?"
+- 프로토콜 버퍼
+  - gRPC의 인터페이스 정의 언어나 메시지 교환 형식으로 쓰인다.
+- 서버 어플리케이션의 메소드를 직접 호출 할 수 있게 해준다.
+- 분산 어플리케이션, 서비스를 만들기 쉽게 해준다.
+- 서버 측에선 인터페이스를 구현하고 gRPC 서버를 구동시켜 클라이언트의 요청을 처리한다.
+- 클라이언트에서는 서버와 똑같은 메소드를 제공한다. 이를 Stub 혹은 Client라고 한다.
+- gRPC 클라이언트와 서버는 다양한 환경에서 (자바와 Node.js 어플리케이션) 서로 통신할 수 있게 해준다.
+
+![gRPC 그림](https://grpc.io/img/landing-2.svg)
+
+## 프로토콜 버퍼
+
+- 프로토콜 버퍼는 gRPC가 기본으로 사용하게 세팅되어 있다.
+- 프로토콜 버퍼는 구조화된 데이터를 직렬화하기 위해 언어에 종속적이지 않고,
+  플랫폼에 구애받지 않는 확장 가능한 메커니즘입니다.
+- 프로토콜 버퍼를 사용하는 첫 단계는 직렬화하고자 하는 데이터의 구조를 정의하는 것이다.
+- `.proto` 파일 확장자를 사용하여 정의한다.
+- 데이터는 메시지로 구조화된다.
+- 이름 - 값 구조의 필드들을 포함한 논리적 레코드들을 메시지라고 한다.
+
+  ### 예시
+
+  ```
+  message Person {
+    string name = 1;
+    int32 id = 2;
+    bool has_ponycopter = 3;
+  }
+  ```
+
+- 프로토콜 버퍼 컴파일러 `protoc` 를 사용해 원하는 언어로 데이터 접근 클래스를 만든다.
+- `protoc`는 `Person` 클래스를 만들고 해당 클래스는 데이터 접근, 직렬화, 프로토콜 버퍼 메시지 수신 등에 쓸 수 있다.
+
+## gRPC 서비스
+
+- `.proto` 파일 확장자인 파일 안에 gRPC 서비스를 정의할 수 있다.
+- 예시
+
+  ```
+  // Greeter 서비스의 정의다.
+  // HelloRequest 타입을 인자로 받고, HelloReply 타입을 반환하는 SayHello 메소드가 정의되어 있다.
+  service Greeter {
+    // 서버로 요청을 보내는 메소드다.
+    rpc SayHello (HelloRequest) returns (HelloReply) {}
+  }
+
+  // 요청에는 name 필드를 포함한다.
+  message HelloRequest {
+    string name = 1;
+  }
+
+  // 응답에는 message가 포함되어 온다.
+  message HelloReply {
+    string message = 1;
+  }
+  ```
+
+- gRPC는 프로토 파일들에서 코드를 생성하기 위해 `protoc` 컴파일러를 사용한다.
+
+### 참고
+
+What is gRPC? - https://grpc.io/docs/what-is-grpc/introduction/
+
+```
+
+```
