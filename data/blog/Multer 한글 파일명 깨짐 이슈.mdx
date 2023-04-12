@@ -8,9 +8,10 @@ summary: 'Mutler 한글 파일명이 깨지는 이슈'
 
 # 🔔 (2023.04.13) 해결방법 추가
 
-\*_multer의 v1.4.5-lts.1 버전에서 의존하고 있는 라이브러리 문제로
-multer 1.4.4을 사용하면 해결된다._
+## multer의 v1.4.5-lts.1 버전에서 의존하고 있는 라이브러리 문제로 multer 1.4.4을 사용하면 해결된다.
 
+<details>
+<summary>이전 해결 방법</summary>
 ## 이슈
 
 `multer` 기반의 S3 파일 업로드 패키지인 `multer-s3`를 사용해 한글 파일을 업로드 파일명이 꺠지는 이슈가 발생했다.
@@ -149,3 +150,5 @@ file.originalname = Buffer.from(file.originalname, 'latin1').toString('utf8')
 ```
 
 위와 같은 임시 코드는 이제 필요없다.
+
+</details>
