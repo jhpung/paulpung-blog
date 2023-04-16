@@ -6,6 +6,7 @@ import siteMetadata from '@/data/siteMetadata'
 const Giscus = () => {
   const [enableLoadComments, setEnabledLoadComments] = useState(true)
   const { theme, resolvedTheme } = useTheme()
+
   const commentsTheme =
     siteMetadata.comment.giscusConfig.themeURL === ''
       ? theme === 'dark' || resolvedTheme === 'dark'
@@ -18,6 +19,7 @@ const Giscus = () => {
   const LoadComments = useCallback(() => {
     setEnabledLoadComments(false)
 
+    console.log(commentsTheme)
     const {
       repo,
       repositoryId,
@@ -59,12 +61,14 @@ const Giscus = () => {
     const iframe = document.querySelector('iframe.giscus-frame')
     if (!iframe) return
 
-    LoadComments()
+    // LoadComments()
   }, [LoadComments])
 
   useEffect(() => {
-    LoadComments()
-  }, [])
+    // if (theme) {
+    //   LoadComments()
+    // }
+  }, [theme])
   return (
     <div className="w-full pt-6 pb-6 text-center text-gray-700 dark:text-gray-300">
       {enableLoadComments && <button onClick={LoadComments}>댓글 보기</button>}
