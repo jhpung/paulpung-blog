@@ -61,13 +61,13 @@ const Giscus = () => {
     const iframe = document.querySelector('iframe.giscus-frame')
     if (!iframe) return
 
-    // LoadComments()
+    LoadComments()
   }, [LoadComments])
 
   useEffect(() => {
-    // if (theme) {
-    //   LoadComments()
-    // }
+    if (theme) {
+      LoadComments()
+    }
   }, [theme])
   return (
     <div className="w-full pt-6 pb-6 text-center text-gray-700 dark:text-gray-300">
