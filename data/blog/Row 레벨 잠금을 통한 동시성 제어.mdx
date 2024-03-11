@@ -1,0 +1,156 @@
+---
+title: PostgreSQL Row 레벨 잠금을 통한 동시성 제어
+date: '2024-03-11'
+tags: ['PostgreSQL']
+draft: false
+summary: 'PostgreSQL의 잠금을 통해 트랜잭션간 동시성을 제어해보자'
+---
+
+## 개요
+현재 회사의 서비스는 구인공고를 올릴 때마다 하나의 __가상번호__를 해당 공고에 할당하게 된다.
+이러한 가상번호는 가상번호 회선을 제공해주는 업체로부터 일정량을 배분받아 사용하게 된다.
+예를 들어, 1544-0000 ~ 1544-9999번까지 10000개의 번호를 배분받게 되면 해당 가상번호를 실제번호와 연결하도록 요청할 수 있다.
+
+서비스 DB에는 해당 우리가 배분받은 가상번호 목록을 테이블로 관리하고 있는데, 최근 A공고에 할당된걸로 기록된 가상번호가
+B공고의 연락처로 연결되었다는 VOC가 접수되어서 살펴본 결과, 한 가상번호가 A공고에 의해 점유되어도 B공고에 의해 강탈당할 여지가 있음을 발견했다.
+
+## 문제
+
+이는 아마 자주 마주칠 문제일텐데, SELECT후 UPDATE를 하는 경우가 그렇다. 
+우리 서비스에서는 할당 가능한 가상번호를 찾고 그 가상번호를 공고에 연결되었음을 나타내게끔 수정하는 트랜잭션을 아래와 같이 수행한다.
+
+```SQL
+SELECT id 
+FROM virtual_numbers
+WHERE rn is null
+```
+
+```SQL
+UPDATE virtual_numbers
+SET rn = {가상번호와 연결할 실제번호}
+WHERE id = {위 쿼리에서 찾은 가상번호의 ID}
+```
+
+### SELECT - UPDATE
+위와 같은 트랜잭션을 가상번호 할당 트랜잭션이라고 하고, 해당 가상번호 할당 트랜잭션이 거의 동시에 실행될 경우 
+다음과 같은 상황이 벌어질 수 있다. 
+
+`공고 A가 등록이 되고, 공고 A 담당자의 번호로 가상번호를 생성해야 한다`
+
+`공고 B가 등록이 되고, 공고 B 담당자의 번호로 가상번호를 생성해야 한다.`
+
+순서|트랜잭션 A|트랜잭션 B|설명|
+|-|-|-|-|
+|1|SELECT id FROM virtual_numbers WHERE rn IS NULL LIMIT 1||ID가 1인 가상번호를 얻는다.
+|2||SELECT id FROM virtual_numbers WHERE rn IS NULL LIMIT 1|ID가 1인 가상번호를 얻는다.
+|3|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결시킨다
+|4|UPDATE virtual_numbers SET rn = {공고B담당자연락처} WHERE id = 1||ID가 1인 가상번호가 공고 B 담당자 연락처와 연결시킨다
+
+이렇게 되면 공고 A의 경우 담당자연락처가 B의 담당자연락처로 뒤집어 써지게 된다.
+해당 공고를 보고 연락을 시도하는 구직자는 엉뚱한 채용담당자와 연결되게 되고, 해당 채용담당자 또한
+유효한 구직자와 연결되지 못한다.
+
+이를 트랜잭션의 격히 레벨을 `SERIALIZABLE`로 설정하는 것으로 방지할 수도 있지만, 
+트랜잭션끼리의 결과가 충돌될 경우 실패하므로 이에 대한 처리를 고려해야 한다는 점이 걸린다.
+
+`REPEATABLE READ`의 경우, 트랜잭션이 시작된 후 다른 트랜잭션에 의해 변경된 행을 수정하거나 잠글 수 없기 때문에 마찬가지로
+에러 처리를 해줘야 한다.
+
+> ✨ because a repeatable read transaction cannot modify or lock rows changed by other transactions after the repeatable read transaction began.
+> 
+> 📎 https://postgresql.kr/docs/13/transaction-iso.html
+
+### FOR UPDATE를 통한 해결
+
+그래서 그 대안으로 이를 `FOR UPDATE` 잠금으로 해결할 수 있다. 격리 레벨은 `READ COMMITED`여야 한다.
+해당 잠금은 `FOR UPDATE` 잠금을 특정 트랜잭션에서 획득했다면
+`FOR UPDATE` 잠금을 획득하고자 하는 다른 트랜잭션은 대기하게 된다.
+이와 동시에 트랜잭션 격리 레벨을 `READ COMMITED`로 설정하게 된다면
+두번째 트랜잭션은 첫번째 트랜잭션이 커밋되었을 때, 기준으로 새 가상번호를 조회하게 된다.
+결과적으로 아래의 순서로 진행하게 된다.
+
+순서|트랜잭션 A|트랜잭션 B|설명|
+|-|-|-|-|
+|1|SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE||ID가 1인 가상번호를 얻고, 잠금을 건다.
+|2||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|ID가 1인 가상번호가 조건에 맞지만, 잠금을 획득할 수 없기에 대기한다.
+|3|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1 LIMIT 1||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결시킨다
+|4|COMMIT||트랜잭션 A가 커밋한다
+|5||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|트랜잭션 A의 커밋에 의해 쿼리 결과가 달라지므로 다음으로 rn이 null인 ID가 2인 행을 반환하게 된다.
+
+이렇게 되면 여러 트랜잭션이 동시에 실행되더라도 가상번호가 중복할당되는 경우를 방지할 수 있다.
+
+### 중간에 외부 API 요청 처리가 필요하다면? 
+
+여기에 복잡성을 추가해서 상황을 가정해보자. 실제로 가상번호가 실제번호와 회선이 연결되려면 단순히 DB CRUD만으론 불가능하다.
+당연히 실제 회선을 소유하고 있는 업체에 할당을 요청해야 한다. 만약 해당 업체가 API를 요청을 통해 회선 할당이 가능하게끔 해놨다면
+위의 트랜잭션 처리 중 API를 요청해야 한다. 즉, 아래와 같이 생각할 수 있다.
+
+`SELECT FOR UPDATE -> 할당 API CALL -> UPDATE`
+
+하지만 이 경우 치명적인 이슈가 발생할 수 있다. API CALL 단계를 기다리게 된다면 해당 트랜잭션의 커밋 처리까지 
+해당 API 처리의 완료를 기다리게 된다. 이 경우 만약 해당 업체의 서버에 장애가 발생하거나 레이턴시가 늘어났을 때,
+잠금을 얻기 위해 대기하고 있던 트랜잭션이 오래 기다리게 될 수 있다. 
+이를 해결하기 위해 잠금 획득을 기다리는 시간의 최대한도를 정할 수 있지만, 이 또한 오류 처리를 해야 하기 때문에 조금 귀찮고,
+가상번호 할당 트랜잭션이 동시에 2개가 아니라 10개, 100개가 될 수도 있는데, 이런 경우 서비스가 굉장히 느려질 수 있는 지점이 된다.
+그래서 아래와 같이 로직을 수정했다.
+
+`BEGIN SELECT FOR UPDATE -> UPDATE RN = 'occupied' -> COMMIT -> 할당 API CALL -> UPDATE RN = {실제번호}`
+
+이를 테이블로 표현하면 다음과 같다. 
+
+
+순서|트랜잭션 A|트랜잭션 B|설명|
+|-|-|-|-|
+|1|SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE||ID가 1인 가상번호를 얻고, 잠금을 건다.
+|2||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|ID가 1인 가상번호가 조건에 맞지만, 잠금을 획득할 수 없기에 대기한다.
+|3|가상번호 업체에 할당 API 요청||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결되도록 업체에 요청한다.
+|4|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1||정상 요청처리되었을 경우, 해당 레코드를 할당되었음으로 업데이트 한다.
+|5|COMMIT||트랜잭션을 커밋하고 잠금을 반환한다.
+|6||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|트랜잭션 A의 커밋에 의해 쿼리 결과가 달라지므로 다음으로 rn이 null인 ID가 2인 행을 반환하게 된다.
+|7||...|
+
+
+
+처음엔 할당가능한 __가상번호 1__을 가져와 API_CALL 이전에 RN을 'occupied'란 임시값으로 채워둔 후  `COMMIT`한다.
+이를 통해 다음 트랜잭션B가 잠금을 획득하게 되는데, 앞의 트랜잭션A에서 __가상번호 1__은 RN이 NULL이 아니므로 
+할당가능한 가상번호를 찾는 쿼리의 조건인 `rn is null` 조건에 걸리지 않게 된다. 결국 다음 순서인 __가상번호 2__를 획득하게 된다.
+마찬가지로 rn은 `occupied`로 업데이트된다.
+트랜잭션 A는 가상번호 할당 API를 호출한 뒤, 가상번호 업체로부터 정상할당 응답을 확인하고 rn을 임시값이 아닌 실제 채용담당자의 번호를 할당한다.
+이를 테이블로 자세히 묘사하면 다음과 같다.
+
+순서|트랜잭션 A|트랜잭션 B|설명|
+|-|-|-|-|
+|1|SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE||ID가 1인 가상번호를 얻고, 잠금을 건다.
+|2||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|ID가 1인 가상번호가 조건에 맞지만, 잠금을 획득할 수 없기에 대기한다.
+|2|UPDATE virtual_numbers SET rn = 'occupied' WHERE id = 1||바로 occupied라는 임시값을 채워 다른 트랜잭션이 참조할 수 없게 한다.
+|2|COMMIT||바로 occupied라는 임시값을 채워 다른 트랜잭션이 참조할 수 없게 한다.
+|3|가상번호 업체에 할당 API 요청||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결되도록 업체에 요청한다.
+|2||UPDATE virtual_numbers SET rn = 'occupied' WHERE id = 2|ID가 2인 가상번호 레코드에 occupied라는 임시값을 채워 다른 트랜잭션이 참조할 수 없게 한다.
+|2||COMMIT|ID가 2인 가상번호 레코드에 occupied라는 임시값을 채워 다른 트랜잭션이 참조할 수 없게 한다.
+|4|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1||정상 요청처리되었을 경우, 해당 레코드를 할당되었음으로 업데이트 한다.
+|4||가상번호 업체에 할당 API 요청|정상 요청처리되었을 경우, 해당 레코드를 업데이트 한다.
+|7||...|
+
+
+결과적으로 가상번호 할당 트랜잭션 작업 중 API 호출 전 미리 가상번호의 점유 여부를 표기함으로써, 가상번호 할당 로직의 동시성을 
+이전보다 더 향상시킬 수 있었다. 일단은 이정도로 작업을 마무리하고 배포에 나갔고, 이슈없이 잘 동작하였다.
+
+### 생각할만한 점
+
+가상번호를 찾는 쿼리와 임시값을 채워넣는 쿼리를 나눠서 보내게 되면 네트워크 요청이 두 번 나가게 된다. 
+
+SELECT 한 번 API 서버에서 해당 레코드 값을 받아 UPDATE 한 번.
+
+글로 작업을 정리하다 보니 느낀건데, SELECT문과 UPDATE문을 한꺼번에 보낼 수 있지 않을까 생각이 들어서 찾아봤다.
+
+생각한 쿼리 모양은 다음과 같다.
+
+```SQL
+UPDATE virtual_numbers
+SET rn = {실제번호}
+WHERE id = (
+    SELECT id FROM virtual_numbers WHERE rn IS NULL LIMIT 1 FOR UPDATE 
+)
+```
+
+찾아본 결과 서브쿼리에 FOR UPDATE 문을 사용하지 못하므로 실현하기 어려운걸로 판명됐다... :) 
