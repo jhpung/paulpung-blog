@@ -27,8 +27,8 @@ WHERE rn is null
 
 ```SQL
 UPDATE virtual_numbers
-SET rn = {가상번호와 연결할 실제번호}
-WHERE id = {위 쿼리에서 찾은 가상번호의 ID}
+SET rn = (가상번호와 연결할 실제번호)
+WHERE id = (위 쿼리에서 찾은 가상번호의 ID)
 ```
 
 ### SELECT - UPDATE
@@ -43,8 +43,8 @@ WHERE id = {위 쿼리에서 찾은 가상번호의 ID}
 |-|-|-|-|
 |1|SELECT id FROM virtual_numbers WHERE rn IS NULL LIMIT 1||ID가 1인 가상번호를 얻는다.
 |2||SELECT id FROM virtual_numbers WHERE rn IS NULL LIMIT 1|ID가 1인 가상번호를 얻는다.
-|3|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결시킨다
-|4|UPDATE virtual_numbers SET rn = {공고B담당자연락처} WHERE id = 1||ID가 1인 가상번호가 공고 B 담당자 연락처와 연결시킨다
+|3|UPDATE virtual_numbers SET rn = (공고A담당자연락처) WHERE id = 1||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결시킨다
+|4|UPDATE virtual_numbers SET rn = (공고B담당자연락처) WHERE id = 1||ID가 1인 가상번호가 공고 B 담당자 연락처와 연결시킨다
 
 이렇게 되면 공고 A의 경우 담당자연락처가 B의 담당자연락처로 뒤집어 써지게 된다.
 해당 공고를 보고 연락을 시도하는 구직자는 엉뚱한 채용담당자와 연결되게 되고, 해당 채용담당자 또한
@@ -73,7 +73,7 @@ WHERE id = {위 쿼리에서 찾은 가상번호의 ID}
 |-|-|-|-|
 |1|SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE||ID가 1인 가상번호를 얻고, 잠금을 건다.
 |2||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|ID가 1인 가상번호가 조건에 맞지만, 잠금을 획득할 수 없기에 대기한다.
-|3|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1 LIMIT 1||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결시킨다
+|3|UPDATE virtual_numbers SET rn = (공고A담당자연락처) WHERE id = 1 LIMIT 1||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결시킨다
 |4|COMMIT||트랜잭션 A가 커밋한다
 |5||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|트랜잭션 A의 커밋에 의해 쿼리 결과가 달라지므로 다음으로 rn이 null인 ID가 2인 행을 반환하게 된다.
 
@@ -94,7 +94,7 @@ WHERE id = {위 쿼리에서 찾은 가상번호의 ID}
 가상번호 할당 트랜잭션이 동시에 2개가 아니라 10개, 100개가 될 수도 있는데, 이런 경우 서비스가 굉장히 느려질 수 있는 지점이 된다.
 그래서 아래와 같이 로직을 수정했다.
 
-`BEGIN SELECT FOR UPDATE -> UPDATE RN = 'occupied' -> COMMIT -> 할당 API CALL -> UPDATE RN = {실제번호}`
+`BEGIN SELECT FOR UPDATE -> UPDATE RN = 'occupied' -> COMMIT -> 할당 API CALL -> UPDATE RN = (실제번호)`
 
 이를 테이블로 표현하면 다음과 같다. 
 
@@ -104,7 +104,7 @@ WHERE id = {위 쿼리에서 찾은 가상번호의 ID}
 |1|SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE||ID가 1인 가상번호를 얻고, 잠금을 건다.
 |2||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|ID가 1인 가상번호가 조건에 맞지만, 잠금을 획득할 수 없기에 대기한다.
 |3|가상번호 업체에 할당 API 요청||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결되도록 업체에 요청한다.
-|4|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1||정상 요청처리되었을 경우, 해당 레코드를 할당되었음으로 업데이트 한다.
+|4|UPDATE virtual_numbers SET rn = (공고A담당자연락처) WHERE id = 1||정상 요청처리되었을 경우, 해당 레코드를 할당되었음으로 업데이트 한다.
 |5|COMMIT||트랜잭션을 커밋하고 잠금을 반환한다.
 |6||SELECT id FROM virtual_numbers WHERE rn IS NULL FOR UPDATE|트랜잭션 A의 커밋에 의해 쿼리 결과가 달라지므로 다음으로 rn이 null인 ID가 2인 행을 반환하게 된다.
 |7||...|
@@ -127,7 +127,7 @@ WHERE id = {위 쿼리에서 찾은 가상번호의 ID}
 |3|가상번호 업체에 할당 API 요청||ID가 1인 가상번호가 공고 A 담당자 연락처와 연결되도록 업체에 요청한다.
 |2||UPDATE virtual_numbers SET rn = 'occupied' WHERE id = 2|ID가 2인 가상번호 레코드에 occupied라는 임시값을 채워 다른 트랜잭션이 참조할 수 없게 한다.
 |2||COMMIT|ID가 2인 가상번호 레코드에 occupied라는 임시값을 채워 다른 트랜잭션이 참조할 수 없게 한다.
-|4|UPDATE virtual_numbers SET rn = {공고A담당자연락처} WHERE id = 1||정상 요청처리되었을 경우, 해당 레코드를 할당되었음으로 업데이트 한다.
+|4|UPDATE virtual_numbers SET rn = (공고A담당자연락처) WHERE id = 1||정상 요청처리되었을 경우, 해당 레코드를 할당되었음으로 업데이트 한다.
 |4||가상번호 업체에 할당 API 요청|정상 요청처리되었을 경우, 해당 레코드를 업데이트 한다.
 |7||...|
 
@@ -147,7 +147,7 @@ SELECT 한 번 API 서버에서 해당 레코드 값을 받아 UPDATE 한 번.
 
 ```SQL
 UPDATE virtual_numbers
-SET rn = {실제번호}
+SET rn = (실제번호)
 WHERE id = (
     SELECT id FROM virtual_numbers WHERE rn IS NULL LIMIT 1 FOR UPDATE 
 )
