@@ -154,3 +154,29 @@ WHERE id = (
 ```
 
 찾아본 결과 서브쿼리에 FOR UPDATE 문을 사용하지 못하므로 실현하기 어려운걸로 판명됐다... :) 
+
+- 2024.03.12 추가
+
+`order by radnom()`으로 무작위 추출하는 방법도 있다고 하지만, `N`을 가상번호 테이블 행의 수라고 할 때, 행마다 랜덤한 값을 할당하는데 O(N), 
+이 값들을 정렬하는데 O(NlogN)이 걸린다. 결국 O(N + NlogN)이 걸리게 된다. 바로 도입하기엔 조금 두려운 시간복잡도이기 때문에 
+대한으로 임의의 offset을 적응해도 될 것 같다는 생각이 든다.
+
+0 ~ 10 사이의 임의의 offset을 적용하게 된다면 최대 10개의 가상번호를 동시에 할당하는 것처럼 처리할 수 있다.
+`offset`이 0이 나왔을 때, 해당 조건에 해당하는 행에 잠금이 걸리게 되고, 만약 다음 `offset`이 7이 나오게 된다면
+해당 조건에 맞는 행엔 잠금이 걸려있지 않아 바로 잠금을 획득할 수 있을 것으로 예상된다. 아래는 예시다.
+
+```SQL
+SELECT id
+FROM virtual_numbers
+WHERE rn IS NULL
+LIMIT 1 
+OFFSET 7 -- offset에 의해 서로 다른 행에 접근한다. 이로 인해 동시성이 향상된다. 
+FOR UPDATE
+
+SELECT id
+FROM virtual_numbers
+WHERE rn IS NULL
+LIMIT 1 
+OFFSET 0 -- offset에 의해 서로 다른 행에 접근한다. 이로 인해 동시성이 향상된다. 
+FOR UPDATE
+```
