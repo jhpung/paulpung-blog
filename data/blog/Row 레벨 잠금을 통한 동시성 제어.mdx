@@ -186,6 +186,7 @@ FOR UPDATE
 
 - 2023-03-17 추가
 random offset이 아닌 가상번호에 임의의 그룹 필드를 추가하여 where 절에 넣으면 동작하는 것으로 확인된다.
+이를 통해 동시성을 높일 수 있을 것 같다.
 ```SQL
 SELECT id
 FROM virtual_numbers
